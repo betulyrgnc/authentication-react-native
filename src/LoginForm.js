@@ -1,32 +1,61 @@
 import React, { Component } from 'react';
-import { TextInput } from 'react-native';
+import { TextInput, Alert } from 'react-native';
 import firebase from 'firebase';
 import Button from './ortak/Button';
 import Card from './ortak/Card';
 import CardSection from './ortak/CardSection';
+import Spinner from './ortak/Spinner';
 
  class LoginForm extends Component {
-   state ={ email: '', password: '' };
+   state ={ email: '', password: '', loading: false };
    clickLogin() {
      //console.log(' email ' + this.state.email);
      //console.log(' password ' + this.state.password);
+     this.setState({ loading: true });
      const { email, password } = this.state;
-     firebase.auth().signInWithEmailAndPassword(email, password)
-     .then(this.loginSucces.bind(this))
-     .catch(() => {
-       firebase.auth().createUserWithEmailAndPassword(email, password)
-       .then(this.loginSucces.bind(this))
-       .catch(this.loginFail.bind(this));
-     });
-   }
+
+     if (email === ''  || password === '') {
+       this.setState({ loading: false });
+       Alert.alert(
+         'Mesaj', // Başlık kısmı
+         'Her iki alanda dolu olmalı!', //İçerik
+         [
+           { text: 'Tamam', onPress: () => null } //Buton için
+         ]
+       );
+     } else {
+         firebase.auth().signInWithEmailAndPassword(email, password)
+         .then(this.loginSucces.bind(this))
+         .catch(() => {
+           firebase.auth().createUserWithEmailAndPassword(email, password)
+           .then(this.loginSucces.bind(this))
+           .catch(this.loginFail.bind(this));
+         });
+       }
+     }
+
    loginSucces() {
      console.log('başarılı');
+     this.setState({ loading: false });
    }
 
    loginFail() {
      console.log('Hatalı');
+     this.setState({ loading: false });
+     Alert.alert(
+       'Mesaj', // Başlık kısmı
+       'Kullanıcı adı veya şifreniz hatalı!', //İçerik
+       [
+         { text: 'Tamam', onPress: () => null } //Buton için
+       ]
+     );
    }
-
+   renderButton(){
+     if (!this.state.loading){
+       return <Button onPress={this.clickLogin.bind(this)}> GİRİŞ </Button>;
+     }
+     return <Spinner size="small" />;
+   }
    render() {
      const { inputStyle } = styles;
      return (
@@ -41,6 +70,7 @@ import CardSection from './ortak/CardSection';
          </CardSection>
          <CardSection>
            <TextInput
+           secureTextEntry
            placeholder="password"
            style={inputStyle}
            value={this.state.password}
@@ -48,7 +78,7 @@ import CardSection from './ortak/CardSection';
            />
          </CardSection>
          <CardSection>
-          <Button onPress={this.clickLogin.bind(this)}> GİRİŞ </Button>
+          {this.renderButton()}
          </CardSection>
        </Card>
      )
